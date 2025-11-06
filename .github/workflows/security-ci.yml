@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-        pip install bandit semgrep
+        pip install bandit semgrep pbr
 
     - name: 🔒 SAST - Bandit Security Scan
       run: |
