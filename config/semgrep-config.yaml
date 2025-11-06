@@ -1,0 +1,21 @@
+rules:
+  - id: jwt-hardcoded-secret
+    patterns:
+      - pattern: jwt.encode(..., "$SECRET", ...)
+    message: "Hardcoded JWT secret detected"
+    severity: ERROR
+    languages: [python]
+
+  - id: sql-injection
+    patterns:
+      - pattern: f"SELECT ... $USER_INPUT ..."
+    message: "Potential SQL injection vulnerability"
+    severity: ERROR
+    languages: [python]
+
+  - id: xss-vulnerability
+    patterns:
+      - pattern: echo $USER_INPUT
+    message: "Potential XSS vulnerability"
+    severity: ERROR
+    languages: [python]

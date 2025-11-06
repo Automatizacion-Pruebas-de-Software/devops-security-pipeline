@@ -1,0 +1,4 @@
+# Snyk policy file
+version: v1.19.0
+ignore: {}
+patch: {}

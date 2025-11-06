@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  webapp:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=production-secret-key
+  
+  database:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=security_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    ports:
+      - "5432:5432"

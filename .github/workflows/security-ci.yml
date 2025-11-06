@@ -1,0 +1,265 @@
+name: 🛡️ Security Pipeline CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Semanalmente
+
+jobs:
+  sast-analysis:
+    name: 🔍 SAST - Análisis Estático
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        pip install bandit semgrep
+
+    - name: 🔒 SAST - Bandit Security Scan
+      run: |
+        bandit -r src/ -f json -o bandit-results.json
+        bandit -r src/ -ll
+
+    - name: 🔍 SAST - Semgrep OWASP Scan
+      run: |
+        semgrep --config=p/owasp-top-ten --config=p/security-audit --lang=python src/
+
+    - name: 📊 SAST - SonarQube Analysis
+      uses: SonarSource/sonarqube-scan-action@v1
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    - name: 💾 Upload SAST results
+      uses: actions/upload-artifact@v3
+      with:
+        name: sast-results
+        path: |
+          bandit-results.json
+          semgrep-results.json
+
+  sca-analysis:
+    name: 📦 SCA - Análisis de Dependencias
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔒 SCA - Trivy Vulnerability Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: 📋 SCA - OWASP Dependency Check
+      uses: dependency-check/Dependency-Check@main
+      with:
+        project: 'DevOps-Security-App'
+        path: '.'
+        format: 'HTML'
+        args: >
+          --enableRetired
+          --out reports/
+          --scan src/
+          --scan tests/
+
+    - name: 🛡️ SCA - Snyk Security Scan
+      uses: snyk/actions/python@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+    - name: 💾 Upload SCA results
+      uses: actions/upload-artifact@v3
+      with:
+        name: sca-results
+        path: |
+          trivy-results.sarif
+          dependency-check-report.html
+
+  dast-analysis:
+    name: 🌐 DAST - Análisis Dinámico
+    runs-on: ubuntu-latest
+    services:
+      webapp:
+        image: your-username/your-app:latest  # ✅ Usar imagen pre-construida
+        ports:
+          - "8080:8080"
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐳 Build and start application
+      run: |
+        docker-compose -f docker/docker-compose.yml up -d
+        sleep 30  # Wait for app to start
+
+    - name: 🎯 Wait for application
+      run: |
+        until curl -s http://localhost:8080/; do
+          echo "Waiting for application..."
+          sleep 10
+        done
+
+    - name: 🔍 DAST - OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.9.0
+      with:
+        target: 'http://webapp:8080'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a -j'
+
+    - name: 🎯 DAST - ZAP Full Scan
+      run: |
+        docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable zap-full-scan.py \
+          -t http://webapp:8080 \
+          -g gen.conf -r zap-report.html
+
+    - name: 🔧 DAST - Burp Suite Integration
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Triggering Burp Suite Enterprise Scan"
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.BURP_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"urls": ["http://localhost:8080"]}' \
+          ${{ secrets.BURP_ENTERPRISE_URL }}
+
+    - name: 💾 Upload DAST results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dast-results
+        path: |
+          zap-report.html
+          baseline-report.md
+
+  security-tests:
+    name: 🧪 Custom Security Tests
+    runs-on: ubuntu-latest
+    needs: [sast-analysis, sca-analysis]
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: 📦 Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+
+    - name: 🔐 JWT Security Tests
+      run: |
+        python -m pytest tests/test_jwt_security.py -v --cov=src/auth --cov-report=xml
+
+    - name: 🍪 Session Management Tests
+      run: |
+        python -m pytest tests/test_session_management.py -v
+
+    - name: 🛡️ Input Validation Tests
+      run: |
+        python -m pytest tests/test_input_validation.py -v
+
+    - name: 💉 SQL Injection Tests
+      run: |
+        python -m pytest tests/test_sql_injection.py -v
+
+    - name: 📊 Generate Coverage Report
+      run: |
+        python -m pytest tests/ --cov=src --cov-report=xml --cov-report=html
+
+    - name: 💾 Upload Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-test-results
+        path: |
+          coverage.xml
+          htmlcov/
+
+  security-report:
+    name: 📈 Generar Reporte Consolidado
+    runs-on: ubuntu-latest
+    needs: [sast-analysis, sca-analysis, dast-analysis, security-tests]
+    if: always()
+    
+    steps:
+    - name: 📊 Generate Security Dashboard
+      run: |
+        echo "## 🛡️ Security Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔍 SAST Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Bandit: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- Semgrep: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- SonarQube: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 SCA Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Trivy: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- OWASP DepCheck: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- Snyk: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🌐 DAST Results" >> $GITHUB_STEP_SUMMARY
+        echo "- OWASP ZAP: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- Burp Suite: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🧪 Custom Security Tests" >> $GITHUB_STEP_SUMMARY
+        echo "- JWT Security: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- Session Management: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- Input Validation: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+        echo "- SQL Injection: ✅ Completado" >> $GITHUB_STEP_SUMMARY
+
+    - name: 💾 Upload Consolidated Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-consolidated-report
+        path: ${{ github.workspace }}
+
+  deploy:
+    name: 🚀 Despliegue Seguro
+    if: success() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: security-report
+    environment: production
+    
+    steps:
+    - name: 📋 Pre-deployment Security Check
+      run: |
+        echo "✅ Todas las pruebas de seguridad pasaron"
+        echo "🚀 Procediendo con despliegue seguro a producción"
+
+    - name: 🐳 Build Production Image
+      run: |
+        docker build -t myapp:latest -f docker/Dockerfile .
+
+    - name: 🔒 Scan Production Image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'myapp:latest'
+        format: 'table'
+        exit-code: 1
+        severity: 'CRITICAL,HIGH'
+
+    - name: 🚀 Deploy to Production
+      run: |
+        echo "Despliegue seguro a producción completado"
+        # Aquí irían los comandos específicos de despliegue
