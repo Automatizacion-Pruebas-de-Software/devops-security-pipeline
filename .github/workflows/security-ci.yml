@@ -1,4 +1,4 @@
-name: 🛡️ Security Pipeline CI/CD
+name: 🛡️ Security Pipeline CI/CD 
 
 on:
   push:
