@@ -70,14 +70,18 @@ jobs:
     - name: 📋 SCA - OWASP Dependency Check
       run: |
         # ✅ USAR DOCKER - versión confiable
+        # Crear directorio de reports primero y usar permisos correctos
+        mkdir -p reports
         docker run --rm \
           -v "$(pwd):/src" \
+          -w /src \
           owasp/dependency-check:latest \
           --scan /src \
           --format "HTML" \
           --format "JSON" \
-          --out /src/reports \
-          --enableRetired
+          --out reports \
+          --enableRetired \
+          --project "DevOps-Security-App"
 
     - name: 🛡️ SCA - Snyk Security Scan
       uses: snyk/actions/python@master
