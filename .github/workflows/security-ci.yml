@@ -72,16 +72,18 @@ jobs:
         # ✅ USAR DOCKER - versión confiable
         # Crear directorio de reports primero y usar permisos correctos
         mkdir -p reports
+        mkdir -p .dependency-check-data
         docker run --rm \
           -v "$(pwd):/src" \
+          -v "$(pwd)/.dependency-check-data:/usr/share/dependency-check/data" \
           -w /src \
           owasp/dependency-check:latest \
           --scan /src \
-          --format "HTML" \
+          -format "HTML" \
           --format "JSON" \
           --out reports \
-          --enableRetired \
-          --project "DevOps-Security-App"
+          --project "DevOps-Security-App" \
+          --nvdApiKey ${{ secrets.NVD_API_KEY }} \
           --noupdate \
           --disableAssemblyAnalyzer \
           --disableCentralAnalyzer \
