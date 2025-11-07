@@ -221,7 +221,8 @@ jobs:
       run: |
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-        pip install "pytest-flask>=1.2.0"  # Versión compatible con Flask 2.3+
+        pip uninstall pytest-flask -y  # Eliminar la versión incompatible
+        pip install pytest-flask-plugin  # Alternativa moderna
 
     - name: 🔐 JWT Security Tests
       run: |
