@@ -39,7 +39,7 @@ jobs:
         docker run --rm -v "$(pwd)/src:/src" returntocorp/semgrep semgrep --config=p/owasp-top-ten --config=p/security-audit /src/
 
     - name: 📊 SAST - SonarQube Analysis
-      uses: SonarSource/sonarqube-scan-action@v1
+      uses: SonarSource/sonarqube-scan-action@v4
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
