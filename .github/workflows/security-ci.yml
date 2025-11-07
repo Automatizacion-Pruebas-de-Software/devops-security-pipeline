@@ -45,7 +45,7 @@ jobs:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     - name: 💾 Upload SAST results
-      uses: actions/upload-artifact@v4  # ✅ CORREGIDO: v3 → v4
+      uses: actions/upload-artifact@v4
       with:
         name: sast-results
         path: |
@@ -68,16 +68,16 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: 📋 SCA - OWASP Dependency Check
-      uses: dependency-check/Dependency-Check@main
-      with:
-        project: 'DevOps-Security-App'
-        path: '.'
-        format: 'HTML'
-        args: >
+      run: |
+        # ✅ USAR DOCKER - versión confiable
+        docker run --rm \
+          -v "$(pwd):/src" \
+          owasp/dependency-check:latest \
+          --scan /src \
+          --format "HTML" \
+          --format "JSON" \
+          --out /src/reports \
           --enableRetired
-          --out reports/
-          --scan src/
-          --scan tests/
 
     - name: 🛡️ SCA - Snyk Security Scan
       uses: snyk/actions/python@master
@@ -87,11 +87,12 @@ jobs:
         args: --severity-threshold=high
 
     - name: 💾 Upload SCA results
-      uses: actions/upload-artifact@v4  # ✅ CORREGIDO: v3 → v4
+      uses: actions/upload-artifact@v4
       with:
         name: sca-results
         path: |
           trivy-results.sarif
+          reports/
         retention-days: 30
 
   dast-analysis:
@@ -118,7 +119,7 @@ jobs:
         cmd_options: '-a'
 
     - name: 💾 Upload DAST results
-      uses: actions/upload-artifact@v4  # ✅ CORREGIDO: v3 → v4
+      uses: actions/upload-artifact@v4
       with:
         name: dast-results
         path: |
@@ -165,7 +166,7 @@ jobs:
         python -m pytest tests/ --cov=src --cov-report=xml --cov-report=html
 
     - name: 💾 Upload Test Results
-      uses: actions/upload-artifact@v4  # ✅ CORREGIDO: v3 → v4
+      uses: actions/upload-artifact@v4
       with:
         name: security-test-results
         path: |
@@ -202,7 +203,7 @@ jobs:
         echo "- SQL Injection: ✅ Completado" >> $GITHUB_STEP_SUMMARY
 
     - name: 💾 Upload Consolidated Report
-      uses: actions/upload-artifact@v4  # ✅ CORREGIDO: v3 → v4
+      uses: actions/upload-artifact@v4
       with:
         name: security-consolidated-report
         path: .
