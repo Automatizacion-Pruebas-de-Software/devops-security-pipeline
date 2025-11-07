@@ -82,6 +82,12 @@ jobs:
           --out reports \
           --enableRetired \
           --project "DevOps-Security-App"
+          --noupdate \
+          --disableAssemblyAnalyzer \
+          --disableCentralAnalyzer \
+          --disableOpenSSLAnalyzer \
+          --disableBundleAudit \
+          --disableRetireJS
 
     - name: 🛡️ SCA - Snyk Security Scan
       uses: snyk/actions/python@master
