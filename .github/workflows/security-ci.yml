@@ -95,6 +95,14 @@ jobs:
       with:
         args: --severity-threshold=high
 
+    - name: 🔄 Auto-fix Vulnerabilities
+      if: failure()  # Solo se ejecuta si Snyk encuentra vulnerabilidades
+      run: |
+        echo "🔧 Intentando actualizar dependencias vulnerables..."
+        pip install --upgrade werkzeug
+        pip freeze > requirements.txt
+        echo "✅ Dependencias actualizadas"
+
     - name: 💾 Upload SCA results
       uses: actions/upload-artifact@v4
       with:
