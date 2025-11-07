@@ -79,17 +79,11 @@ jobs:
           -w /src \
           owasp/dependency-check:latest \
           --scan /src \
-          -format "HTML" \
+          --format "HTML" \
           --format "JSON" \
           --out reports \
           --project "DevOps-Security-App" \
-          --nvdApiKey ${{ secrets.NVD_API_KEY }} \
-          --noupdate \
-          --disableAssemblyAnalyzer \
-          --disableCentralAnalyzer \
-          --disableOpenSSLAnalyzer \
-          --disableBundleAudit \
-          --disableRetireJS
+          --nvdApiKey ${{ secrets.NVD_API_KEY }}
 
     - name: 🛡️ SCA - Snyk Security Scan
       uses: snyk/actions/python@master
