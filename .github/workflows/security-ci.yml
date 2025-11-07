@@ -296,6 +296,9 @@ jobs:
     environment: production
     
     steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
     - name: 📋 Pre-deployment Security Check
       run: |
         echo "✅ Todas las pruebas de seguridad pasaron"

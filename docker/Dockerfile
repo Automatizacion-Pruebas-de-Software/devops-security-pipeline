@@ -1,5 +1,4 @@
-FROM python:3.9-slim
-
+FROM python:3.10-slim
 WORKDIR /app
 
 COPY requirements.txt .
@@ -11,6 +10,6 @@ EXPOSE 8080
 
 # Health check para GitHub Actions
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/ || exit 1
+  CMD curl -f http://localhost:8080/health || exit 1
 
-CMD ["python", "app.py"]
+CMD ["python", "src/app.py"]
