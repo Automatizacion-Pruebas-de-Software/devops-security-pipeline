@@ -1,0 +1,61 @@
+Run started:2025-11-11 14:27:00.841726
+
+Test results:
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: 'your-secret-key-here'
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.7.5/plugins/b105_hardcoded_password_string.html
+   Location: src/app.py:24:11
+23	app = Flask(__name__)
+24	app.config['SECRET_KEY'] = 'your-secret-key-here'
+25	app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+--------------------------------------------------
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: 'securepassword'
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.7.5/plugins/b105_hardcoded_password_string.html
+   Location: src/app.py:136:47
+135	        # Lógica de autenticación (simplificada para demo)
+136	        if username == 'admin' and password == 'securepassword':
+137	            token = create_jwt({
+
+--------------------------------------------------
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: 'CLAVE_FUERTE_SEGURA_123456'
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.7.5/plugins/b105_hardcoded_password_string.html
+   Location: src/auth.py:5:13
+4	
+5	JWT_SECRET = 'CLAVE_FUERTE_SEGURA_123456'
+6	JWT_ALGORITHM = 'HS256'
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.7.5/plugins/b608_hardcoded_sql_expressions.html
+   Location: src/database.py:29:14
+28	    # VULNERABLE: Concatenación directa
+29	    query = f"SELECT * FROM products WHERE name = '{user_input}'"
+30	    cursor.execute(query)  # ¡PELIGRO!
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 263
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 3
+		Medium: 1
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 1
+		Medium: 3
+		High: 0
+Files skipped (0):
